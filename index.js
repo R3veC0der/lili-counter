@@ -6,8 +6,6 @@ const app = express();
 app.use(express.json());
 
 const TOKEN = process.env.BOT_TOKEN;
-const PORT = process.env.PORT || 3000;
-
 const COUNTER_FILE = "./counter.txt";
 
 // ساخت فایل اگر وجود ندارد
@@ -15,22 +13,26 @@ if (!fs.existsSync(COUNTER_FILE)) {
   fs.writeFileSync(COUNTER_FILE, "0");
 }
 
-// تابع ارسال پیام
+// ارسال پیام به تلگرام (ایمن‌تر)
 async function sendMessage(chatId, text) {
-  await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: text
-    })
-  });
+  try {
+    await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: text
+      })
+    });
+  } catch (err) {
+    console.error("Telegram send error:", err);
+  }
 }
 
-// webhook endpoint
+// webhook
 app.post("/webhook", async (req, res) => {
   try {
-    const msg = req.body.message;
+    const msg = req.body?.message;
 
     if (!msg || !msg.text) {
       return res.sendStatus(200);
@@ -40,7 +42,8 @@ app.post("/webhook", async (req, res) => {
     const text = msg.text.trim();
 
     if (text === "لیلی") {
-      let count = parseInt(fs.readFileSync(COUNTER_FILE, "utf8"));
+      let count = parseInt(fs.readFileSync(COUNTER_FILE, "utf8") || "0");
+
       count++;
 
       fs.writeFileSync(COUNTER_FILE, count.toString());
@@ -51,7 +54,7 @@ app.post("/webhook", async (req, res) => {
     res.sendStatus(200);
 
   } catch (err) {
-    console.error(err);
+    console.error("Webhook error:", err);
     res.sendStatus(200);
   }
 });
@@ -60,6 +63,9 @@ app.post("/webhook", async (req, res) => {
 app.get("/", (req, res) => {
   res.send("Bot is running");
 });
+
+// ✅ مهم‌ترین اصلاح اینجاست
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log("Bot running on port", PORT);
