@@ -8,12 +8,12 @@ app.use(express.json());
 const TOKEN = process.env.BOT_TOKEN;
 const COUNTER_FILE = "./counter.txt";
 
-// ساخت فایل اگر وجود ندارد
+// create file if not exist
 if (!fs.existsSync(COUNTER_FILE)) {
   fs.writeFileSync(COUNTER_FILE, "0");
 }
 
-// ارسال پیام به تلگرام (ایمن‌تر)
+// send message to telegram
 async function sendMessage(chatId, text) {
   try {
     await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
@@ -64,7 +64,6 @@ app.get("/", (req, res) => {
   res.send("Bot is running");
 });
 
-// ✅ مهم‌ترین اصلاح اینجاست
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
