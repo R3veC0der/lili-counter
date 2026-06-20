@@ -1,0 +1,66 @@
+import express from "express";
+import fs from "fs";
+import fetch from "node-fetch";
+
+const app = express();
+app.use(express.json());
+
+const TOKEN = process.env.BOT_TOKEN;
+const PORT = process.env.PORT || 3000;
+
+const COUNTER_FILE = "./counter.txt";
+
+// ساخت فایل اگر وجود ندارد
+if (!fs.existsSync(COUNTER_FILE)) {
+  fs.writeFileSync(COUNTER_FILE, "0");
+}
+
+// تابع ارسال پیام
+async function sendMessage(chatId, text) {
+  await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: text
+    })
+  });
+}
+
+// webhook endpoint
+app.post("/webhook", async (req, res) => {
+  try {
+    const msg = req.body.message;
+
+    if (!msg || !msg.text) {
+      return res.sendStatus(200);
+    }
+
+    const chatId = msg.chat.id;
+    const text = msg.text.trim();
+
+    if (text === "لیلی") {
+      let count = parseInt(fs.readFileSync(COUNTER_FILE, "utf8"));
+      count++;
+
+      fs.writeFileSync(COUNTER_FILE, count.toString());
+
+      await sendMessage(chatId, `لیلی شماره: ${count}`);
+    }
+
+    res.sendStatus(200);
+
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(200);
+  }
+});
+
+// health check
+app.get("/", (req, res) => {
+  res.send("Bot is running");
+});
+
+app.listen(PORT, () => {
+  console.log("Bot running on port", PORT);
+});
